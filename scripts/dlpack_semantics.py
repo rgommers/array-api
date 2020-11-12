@@ -1,4 +1,6 @@
 """
+Use many-libs conda env, see: https://gist.github.com/rgommers/347b40695b526ff3993a61d36bdb1c6e
+
 - Overview of APIs
 - Semantics
 - Issues:
@@ -111,12 +113,31 @@ assert x[0] == 4
 #       flaky behaviour.
 
 
+# TensorFlow - PyTorch interop
+# ----------------------------
+import tensorflow as tf
+import torch.utils.dlpack
+
+x = tf.range(3)
+capsule = tf.experimental.dlpack.to_dlpack(x)
+x2 = torch.utils.dlpack.from_dlpack(capsule)
+
+x2 += 1
+assert x2[2] == 3  # sanity check we got the data
+
+capsule2 = torch.utils.dlpack.to_dlpack(x2)
+x3 = tf.experimental.dlpack.from_dlpack(capsule2)
+
+assert x3[2] == 3
+
+
+
+"""
 # CuPy implementation snippet (https://github.com/cupy/cupy/blob/master/cupy/core/dlpack.pyx):
 cdef class DLPackMemory(memory.BaseMemory):
 
-    """Memory object for a dlpack tensor.
-    This does not allocate any memory.
-    """
+    # Memory object for a dlpack tensor.
+    # This does not allocate any memory.
 
     cdef DLManagedTensor* dlm_tensor
     cdef object dltensor
@@ -133,4 +154,6 @@ cdef class DLPackMemory(memory.BaseMemory):
 cpdef ndarray fromDlpack(object dltensor):
    mem = DLPackMemory(dltensor)
    ...
+"""
+
 
